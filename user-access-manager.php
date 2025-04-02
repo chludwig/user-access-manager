@@ -23,49 +23,56 @@
  */
 
 $basePath = __DIR__.DIRECTORY_SEPARATOR;
+
 //Load language
-require_once $basePath.'includes'.DIRECTORY_SEPARATOR.'language.php';
-$locale = apply_filters('plugin_locale', get_locale(), 'user-access-manager');
-load_textdomain(
-    'user-access-manager',
-    WP_LANG_DIR.DIRECTORY_SEPARATOR.'user-access-manager'.DIRECTORY_SEPARATOR.'user-access-manager-'.$locale.'.mo'
-);
-load_plugin_textdomain(
-    'user-access-manager',
-    false,
-    plugin_basename(dirname(__FILE__)).DIRECTORY_SEPARATOR.'languages'
-);
-
-//--- Check requirements ---
-
-//Check php version
-if (version_compare((string) phpversion(), '7.2') === -1) {
-    add_action(
-        'admin_notices',
-        function () {
-            echo '<div id="message" class="error"><p><strong>'
-                .sprintf(TXT_UAM_PHP_VERSION_TO_LOW, phpversion())
-                .'</strong></p></div>';
-        }
+add_action('init', 'uam_load_language_constants', 0);
+function uam_load_language_constants() {
+    global $basePath;
+    require_once $basePath.'includes'.DIRECTORY_SEPARATOR.'language.php';
+    $locale = apply_filters('plugin_locale', get_locale(), 'user-access-manager');
+    load_textdomain(
+        'user-access-manager',
+        WP_LANG_DIR.DIRECTORY_SEPARATOR.'user-access-manager'.DIRECTORY_SEPARATOR.'user-access-manager-'.$locale.'.mo'
     );
-
-    return;
+    load_plugin_textdomain(
+        'user-access-manager',
+        false,
+        plugin_basename(dirname(__FILE__)).DIRECTORY_SEPARATOR.'languages'
+    );
 }
 
-//Check wordpress version
-global $wp_version;
+//--- Check requirements ---
+add_action('init', 'uam_check_versions', 20);
+function uam_check_versions() {
+    //Check php version
+    if (version_compare((string) phpversion(), '7.2') === -1) {
+        add_action(
+            'admin_notices',
+            function () {
+                echo '<div id="message" class="error"><p><strong>'
+                    .sprintf(TXT_UAM_PHP_VERSION_TO_LOW, phpversion())
+                    .'</strong></p></div>';
+            }
+        );
 
-if (version_compare((string) $wp_version, '4.6') === -1) {
-    add_action(
-        'admin_notices',
-        function () use ($wp_version) {
-            echo '<div id="message" class="error"><p><strong>'
-                .sprintf(TXT_UAM_WORDPRESS_VERSION_TO_LOW, $wp_version)
-                .'</strong></p></div>';
-        }
-    );
+        return;
+    }
 
-    return;
+    //Check wordpress version
+    global $wp_version;
+
+    if (version_compare((string) $wp_version, '4.6') === -1) {
+        add_action(
+            'admin_notices',
+            function () use ($wp_version) {
+                echo '<div id="message" class="error"><p><strong>'
+                    .sprintf(TXT_UAM_WORDPRESS_VERSION_TO_LOW, $wp_version)
+                    .'</strong></p></div>';
+            }
+        );
+
+        return;
+    }
 }
 
 //Defines
@@ -73,4 +80,5 @@ require_once $basePath.'vendor/autoload.php';
 require_once $basePath.'init.php';
 
 global $userAccessManager;
-$userAccessManager = initUserAccessManger();
+add_action('init', function() {$userAccessManager = initUserAccessManger();}, 30);
+
